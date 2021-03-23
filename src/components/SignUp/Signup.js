@@ -1,8 +1,8 @@
 import React, {Component} from 'react';
 import 'antd/dist/antd.css';
-import {Link, Redirect} from "react-router-dom";
-import  { Form, Select, Input, Button, Radio, Space, DatePicker} from 'antd';
+import {Form, Select, Input, Button, Radio, Space, DatePicker, Row, Col} from 'antd';
 import axios from "axios";
+import {Redirect} from "react-router-dom";
 
 const { Option } = Select;
 const birth = new Date();
@@ -56,12 +56,18 @@ export default class Signup extends Component {
     }
 
     onSubmitHandler = (e) => {
+        const token=localStorage.getItem("accessToken");
         e.preventDefault();
         this.setState({isLoading: true});
-        axios.post("http://pregnancy.test/api/register", this.state.signupData)
+        axios.post("http://pregnancy.test/api/auth/register", this.state.signupData, {
+            headers: {
+                Authorization: "Bearer " + token
+            }
+        })
+
             .then((response) => {
+                //console.log(response)
                 this.setState({isLoading: false});
-                if (response.data.status === 200) {
                     this.setState({
                         msg: response.data.message,
                         signupData: {
@@ -77,26 +83,32 @@ export default class Signup extends Component {
                             bloodType: "",
                             isLoading: "",
                         },
+                       // redirect:"/home",
                     });
                     setTimeout(() => {
                         this.setState({msg: ""});
                     }, 2000);
-                }
 
-                if (response.data.status === "failed") {
-                    this.setState({msg: response.data.message});
-                    setTimeout(() => {
-                        this.setState({msg: ""});
-                    }, 2000);
-                }
-            });
+                
+            })
+            .catch(error=>{
+                console.log(error)
+            })
     };
 
-    render() {
-        const isLoading = this.state.isLoading;
-            return (
+    state= {redirect:null};
 
+    render() {
+        if(this.state.redirect){
+            return<Redirect to={this.state.redirect}/>
+        }
+
+        const isLoading = this.state.isLoading;
+
+            return (
                 <div className="containers shadow">
+                    <Row justify="center">
+                        <Col span={12}>
                     <br/>
                     <br/>
                     <Input name="name" placeholder="Nombre" onChange={this.onChangehandler}/>
@@ -111,6 +123,7 @@ export default class Signup extends Component {
                     <Radio.Group name="userType" onChange={this.onChangehandler}>
                         <Radio value={'clinicalStaff'}>Personal clínico</Radio>
                         <Radio value={'pregnant'}>Embarazada</Radio>
+                        <Radio value={'admin'}>Administrador</Radio>
                     </Radio.Group>
                     <br/>
                     <br/>
@@ -162,9 +175,10 @@ export default class Signup extends Component {
 
                     <Button type="primary"
                         onClick = {this.onSubmitHandler} >
-                        Registrarse
+                        Registrar usuario
                     </Button>
-
+                        </Col>
+                    </Row>
                 </div>
             );
 
